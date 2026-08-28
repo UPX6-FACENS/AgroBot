@@ -1,0 +1,37 @@
+MIT License
+
+Copyright (c) 2026 Matheus Cravo Purcena Gonçalves, Rafael Henrique dos Reis,
+Samuel de Moraes Delgado, Victor Rodrigues de Oliveira, Vitor Benavides Pitaluga
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+NOTA — esta licença MIT cobre o CÓDIGO deste repositório (scripts/).
+
+A documentação em docs/ e a base de conhecimento em kb/ são licenciadas
+sob CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/deed.pt-br).
+
+O conteúdo técnico agronômico é sintetizado de publicações da Embrapa, Epagri,
+Incaper e CATI, com as fontes citadas ao final de cada ficha. Os fatos técnicos
+pertencem a essas instituições.
+
+As imagens eventualmente baixadas pelos scripts NÃO são cobertas por nenhuma
+destas licenças. Cada foto tem a licença do seu autor, registrada em
+dados/creditos.csv, e esse arquivo não é versionado neste repositório.

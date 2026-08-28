@@ -1,0 +1,49 @@
+# === O MAIS IMPORTANTE ===
+# Nunca comitar imagens. Cada foto de terceiro tem licença própria e o repositório
+# não é o lugar delas. A rastreabilidade fica em dados/creditos.csv, na máquina.
+dados/
+data/
+*.jpg
+*.jpeg
+*.png
+*.webp
+!docs/img/*.png
+
+# Modelos treinados — pesados demais para Git. Use Releases ou Git LFS.
+*.pt
+*.pth
+*.onnx
+*.tflite
+*.h5
+*.pkl
+runs/
+checkpoints/
+
+# Segredos — token da Meta/Twilio, chave do LLM. NUNCA comitar.
+.env
+.env.*
+*.pem
+credentials.json
+config.local.*
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.ipynb_checkpoints/
+.pytest_cache/
+.mypy_cache/
+*.egg-info/
+
+# Ferramentas e SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs e temporários
+*.log
+tmp/
+temp/

@@ -1,0 +1,21 @@
+# Scripts de dataset (fases 1 e 2 do guia)
+requests>=2.31
+tqdm>=4.66
+pillow>=10.0
+imagehash>=4.3
+opencv-python-headless>=4.9
+
+# Treino do classificador — descomente quando chegar na fase 4
+# torch>=2.2
+# torchvision>=0.17
+# scikit-learn>=1.4
+# matplotlib>=3.8
+
+# Backend do bot — descomente quando começar a fase de integração
+# fastapi>=0.110
+# uvicorn[standard]>=0.29
+# redis>=5.0
+# rq>=1.16
+# psycopg[binary]>=3.1
+# pgvector>=0.2
+# onnxruntime>=1.17
