@@ -4,7 +4,9 @@ Chatbot de WhatsApp que identifica pragas do milho por foto e responde, em lingu
 
 Projeto UPX — Engenharia de Computação, Facens · 2º semestre de 2026
 
-**Integrantes:** Matheus Cravo Purcena Gonçalves · Rafael Henrique dos Reis · Samuel de Moraes Delgado · Victor Rodrigues de Oliveira · Vitor Benavides Pitaluga
+**Integrantes:** Matheus Gonçalves Purcena Cravo · Murilo Antunes Garcia · Rafael Henrique dos Reis · Samuel de Moraes Delgado (líder) · Victor de Oliveira Rodrigues · Vitor Benavides Pitaluga
+
+**Orientador:** Prof. Lucas Monteiro
 
 ---
 
@@ -36,12 +38,17 @@ Detalhes em [`docs/02-arquitetura.md`](docs/02-arquitetura.md).
 
 **Classes do classificador:**
 
-| Classe | Por que entra |
-|---|---|
-| `lagarta_cartucho` | Praga nº 1 para quem planta sem semente Bt |
-| `lagarta_espiga` | Decisiva para milho verde de feira |
-| `vaquinha` | Espécie brasileira, dano visual inconfundível |
-| `milho_sadio` | Classe negativa — permite responder "não tem nada aqui" |
+| Classe | Por que entra | Fotos públicas (GBIF) |
+|---|---|---|
+| `lagarta_cartucho` | Praga nº 1 para quem planta sem semente Bt | 7.911 |
+| `lagarta_espiga` | Decisiva para milho verde de feira | 12.577 + 21.955 |
+| `vaquinha` | Espécie brasileira, dano visual inconfundível | 2.522 |
+| `lagarta_elasmo` | Ataca o colo da planta nova; ficha já curada em `kb/` | 1.010 |
+| `milho_sadio` | Classe negativa — permite responder "não tem nada aqui" | 518 (*Zea mays*) + fotos da visita |
+
+São **cinco classes**. É uma a mais do que o recomendado para um primeiro treino: se a matriz de confusão da semana 4 mostrar `lagarta_elasmo` sendo confundida com `lagarta_cartucho`, a decisão é fundir ou remover essa classe, não insistir nela.
+
+`milho_sadio` é a única classe que não sai direto do script de download — não existe "foto de milho sadio" catalogada como tal. O script busca ocorrências de *Zea mays* no GBIF, e essas fotos **precisam de curadoria manual** (descartar planta doente, espiga colhida, milharal de longe) antes de virar classe. As fotos da visita ao João são a melhor fonte para ela.
 
 Rejeição não é classe treinada: é limiar de confiança. Se o modelo não tem certeza, o bot diz que não sabe e encaminha para a Casa da Agricultura.
 
