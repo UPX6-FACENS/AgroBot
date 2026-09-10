@@ -24,21 +24,24 @@ Fizemos a varredura das fontes públicas. Três achados que precisam ser digerid
 | Percevejo-barriga-verde | ~14 | ❌ Inviável |
 | Broca-da-cana | **7** | ❌ Inviável |
 
-**3. A praga nº 1 do Brasil é justamente a que a visão computacional não resolve.** A cigarrinha tem 46 fotos públicas, o sintoma dela aparece 30 dias depois da infecção, e não existe nível de controle porque um único inseto infectivo já inutiliza a planta. Ela sai do classificador e entra por regra de calendário — ver `pesquisa-panorama-pragas-milho.md`, §6.
+**3. A praga nº 1 do Brasil é justamente a que a visão computacional não resolve.** A cigarrinha tem 46 fotos públicas, o sintoma dela aparece 30 dias depois da infecção, e não existe nível de controle porque um único inseto infectivo já inutiliza a planta. Ela sai do classificador e entra por regra de calendário — ver [`03-panorama-pragas.md`](03-panorama-pragas.md), §6.
 
-### Decisão de classes (fechar na reunião desta semana)
+### Decisão de classes (FECHADA)
 
 ```
-0. lagarta_cartucho     ← nº 1 para o pequeno produtor, milhares de fotos
-1. lagarta_espiga       ← decisiva para milho verde de feira, milhares de fotos
-2. vaquinha             ← espécie brasileira, dano visual inconfundível
-3. milho_sadio          ← classe negativa, obrigatória
+0. lagarta_cartucho     ← nº 1 para o pequeno produtor, 7.911 fotos
+1. lagarta_espiga       ← decisiva para milho verde de feira, 12.577 + 21.955
+2. vaquinha             ← espécie brasileira, dano visual inconfundível, 2.522
+3. lagarta_elasmo       ← ataca o colo da planta nova, 1.010 — ficha já curada em kb/
+4. milho_sadio          ← classe negativa, obrigatória, 518 (Zea mays, medido no GBIF)
    (+ rejeição por limiar de confiança, não é classe treinada)
 ```
 
-`lagarta_elasmo` fica como **classe 4 opcional**, se sobrar tempo depois que as quatro primeiras estiverem funcionando. Não comece com cinco.
-
 > **Por que `milho_sadio` é obrigatória:** sem ela, o modelo é obrigado a escolher uma praga para toda foto que chegar — inclusive para a foto de uma planta perfeitamente boa. Com ela, "não tem nada aqui" vira uma resposta possível.
+
+> **De onde vem a foto de `milho_sadio`:** não existe fonte pública rotulada assim. O script 01 busca ocorrências de *Zea mays* no GBIF: são **518 ocorrências** com foto e licença CC0/CC-BY (medido na API em setembro/2026), e elas trazem milharal de longe, espiga colhida, grão, planta doente e planta boa tudo junto. **Essa classe é a que mais exige curadoria manual**, e as fotos da visita ao João são a melhor fonte para ela. Se sobrar menos de 200 imagens limpas, é sinal de que ela precisa vir quase toda de campo.
+
+> **O risco de começar com cinco, assumido em reunião:** cinco classes com dataset desigual costuma render acurácia pior que três com dataset bom, e `lagarta_elasmo` é a de menor volume. O critério de corte fica registrado desde já: se a matriz de confusão da semana 4 mostrar `lagarta_elasmo` sendo trocada por `lagarta_cartucho`, a classe é fundida ou removida — não se insiste nela.
 
 ---
 
@@ -55,6 +58,7 @@ dados/
 │   ├── lagarta_cartucho/
 │   ├── lagarta_espiga/
 │   ├── vaquinha/
+│   ├── lagarta_elasmo/
 │   └── milho_sadio/
 ├── bruto_campo/        # fotos que VOCÊS tiraram — nunca misturar com bruto/
 │   └── (mesmas classes)
@@ -261,5 +265,5 @@ Se a semana 4 fechar com matriz de confusão em mãos, mesmo feia, a frente de d
 1. **Deixar o `creditos.csv` para depois.** Não tem depois.
 2. **Misturar fundo de estúdio com foto de campo.** O modelo aprende o fundo e a acurácia mente.
 3. **Split por foto em vez de por observação.** Acurácia inflada que desaba em campo.
-4. **Começar com muitas classes.** Três classes boas batem cinco ruins, e classe nova é fácil de acrescentar.
+4. **Insistir numa classe que não fecha.** Três classes boas batem cinco ruins. Fechamos em cinco de propósito, mas com data marcada para reavaliar: matriz de confusão da semana 4 na mão, `lagarta_elasmo` sai se estiver atrapalhando.
 5. **Não ir a campo.** Sem foto real, vocês não têm como saber se o modelo funciona — e a banca vai perguntar exatamente isso.

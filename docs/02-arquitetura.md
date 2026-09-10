@@ -7,7 +7,9 @@ Chatbot de WhatsApp para identificação de pragas por foto, com base de conheci
 **Dor:** perde safra porque não identifica a praga a tempo e não tem dinheiro para agrônomo visitar a propriedade.
 **Expectativa dele:** tirar foto, mandar num número de WhatsApp, receber resposta rápida e simples dizendo o que é e como resolver sem gastar muito.
 
-**Integrantes:** Matheus Cravo Purcena Gonçalves, Rafael Henrique dos Reis, Samuel de Moraes Delgado, Victor Rodrigues de Oliveira, Vitor Benavides Pitaluga
+**Integrantes:** Matheus Gonçalves Purcena Cravo, Murilo Antunes Garcia, Rafael Henrique dos Reis, Samuel de Moraes Delgado (líder), Victor de Oliveira Rodrigues, Vitor Benavides Pitaluga
+
+**Orientador:** Prof. Lucas Monteiro
 
 <!-- Os RAs foram removidos desta cópia porque o repositório pode ser público.
      Mantenha-os apenas na versão entregue ao professor. -->
@@ -23,7 +25,7 @@ Chatbot de WhatsApp para identificação de pragas por foto, com base de conheci
 |---|---|---|
 | RF01 | Receber foto enviada pelo produtor via WhatsApp | "tirar uma foto do inseto ou da folha doente" |
 | RF02 | Aceitar texto ou **áudio** junto da foto ("o que é isso na minha couve?") | João digita pouco; áudio é o hábito dele |
-| RF03 | Identificar a praga entre um conjunto **fechado** de 3 a 5 classes | Escopo definido pelo grupo |
+| RF03 | Identificar a praga entre um conjunto **fechado** de 5 classes (4 pragas + planta sadia) | Escopo definido pelo grupo — ver §3.1 |
 | RF04 | **Rejeitar** com honestidade quando não tiver certeza | Confiança do produtor na IA é a pergunta aberta do checklist |
 | RF05 | Responder em português simples: o que é, qual o dano, o que fazer | "resposta rápida e simples" |
 | RF06 | Ordenar as recomendações **do mais barato para o mais caro** | "sem gastar muito" é prioridade dele, não do grupo |
@@ -46,9 +48,9 @@ Chatbot de WhatsApp para identificação de pragas por foto, com base de conheci
 
 ### 1.3 Restrições
 
-- 5 alunos, ~12 semanas úteis (20/08 → meados de dezembro), sem orçamento e sem GPU dedicada.
+- 6 alunos, ~12 semanas úteis (20/08 → meados de dezembro), sem orçamento e sem GPU dedicada.
 - Fora de escopo (definido pelo grupo): previsão de clima, drones, app mobile nativo completo.
-- Fora de escopo (acrescentado por decisão de arquitetura): múltiplas culturas além de hortaliças e milho, multiusuário simultâneo em escala, receituário agronômico automatizado.
+- Fora de escopo (acrescentado por decisão de arquitetura): **qualquer cultura além do milho** — inclusive as hortaliças que o João também planta —, multiusuário simultâneo em escala, receituário agronômico automatizado.
 
 ---
 
@@ -142,25 +144,31 @@ Esta é a decisão que define o projeto. Três caminhos:
 
 Isso responde direto à pergunta que o próprio grupo deixou em aberto no checklist — *"o produtor confia na resposta de uma IA?"*. A resposta arquitetural é: ele confia mais num sistema que **sabe dizer que não sabe**.
 
-### 3.1 Classes (fechar na semana 2, com o produtor)
+### 3.1 Classes (fechado — cultura única: milho)
 
-Sugestão para hortaliças + milho na região:
+A lista original deste documento cobria hortaliças (traça, pulgão, mosca-branca). Ela foi **substituída** depois do levantamento de imagens de `docs/03-panorama-pragas.md` e `docs/04-guia-dataset.md`: a cultura foi fechada em milho e as classes saíram do que existe de foto pública com licença limpa.
 
-| # | Praga | Cultura | Por que entra |
+| # | Classe | Espécie | Por que entra |
 |---|---|---|---|
-| 1 | Lagarta-do-cartucho (*Spodoptera frugiperda*) | Milho | A mais destrutiva do milho; dano visual muito característico (cartucho raspado) |
-| 2 | Traça-das-crucíferas (*Plutella xylostella*) | Couve, brócolis, repolho | Praga nº 1 das brássicas |
-| 3 | Pulgão (*Myzus persicae* / *Brevicoryne brassicae*) | Hortaliças em geral | Colônia é visualmente distinta e fácil de fotografar |
-| 4 | Mosca-branca (*Bemisia tabaci*) | Tomate, hortaliças | Comum e transmite vírus |
-| 5 | Vaquinha (*Diabrotica speciosa*) | Milho e hortaliças | Furo redondo na folha, dano inconfundível |
-| 6 | **`desconhecido`** | — | **Classe obrigatória** — ver §3.3 |
+| 0 | `lagarta_cartucho` | *Spodoptera frugiperda* | A mais destrutiva do milho; dano visual muito característico (cartucho raspado) |
+| 1 | `lagarta_espiga` | *Helicoverpa zea* | Decisiva para o milho verde de feira, que é o que o João vende |
+| 2 | `vaquinha` | *Diabrotica speciosa* | Espécie brasileira; furo redondo na folha, dano inconfundível |
+| 3 | `lagarta_elasmo` | *Elasmopalpus lignosella* | Ataca o colo da planta nova; ficha já curada em `kb/fichas-pragas-milho.md` |
+| 4 | `milho_sadio` | *Zea mays* | **Classe negativa obrigatória** — sem ela o modelo é forçado a escolher uma praga até para foto de planta boa. 518 ocorrências no GBIF, a menor base das cinco |
 
-> Comece com **3 classes**, não 5. Cinco classes com dataset ruim tem acurácia pior que três com dataset bom, e classe a mais é fácil de acrescentar depois. Confirme com o João e com a Casa da Agricultura de Sorocaba quais são realmente as três que mais doem — não assuma.
+Rejeição (`desconhecido`) **não é classe treinada** — é limiar de confiança, ver §3.3.
+
+> **Risco assumido conscientemente:** cinco classes é uma a mais do que o recomendado para um primeiro treino, e `lagarta_elasmo` é a de menor volume (1.010 fotos no GBIF contra 7.911 da lagarta-do-cartucho). O critério de corte está definido: se a matriz de confusão da semana 4 mostrar `lagarta_elasmo` sendo trocada por `lagarta_cartucho`, a classe sai ou é fundida — não se insiste nela.
+
+> `milho_sadio` é a única classe sem fonte direta: não existe foto catalogada como "milho sadio". O script 01 busca ocorrências de *Zea mays* e essas imagens **exigem curadoria manual** antes de entrar no treino. As fotos da visita ao João são a melhor fonte para ela.
+
+**A cigarrinha-do-milho fica fora do classificador de propósito** — 46 fotos públicas no mundo, sintoma que só aparece 30 dias depois da infecção e nenhum nível de controle. Ela é tratada por regra de calendário, não por imagem (`docs/03-panorama-pragas.md`, §6).
 
 ### 3.2 Dados
 
-- **Base pública:** [IP102](https://github.com/xpwu95/IP102) (CVPR 2019) — ~75 mil imagens, 102 classes de pragas agrícolas, disponível também no Kaggle. Filtre só as classes de interesse. É o ponto de partida honesto.
-- **Complemento:** iNaturalist/GBIF (fotos de campo com licença aberta) — importantes porque IP102 tem viés de foto "bonita".
+- **Base principal:** GBIF, via `scripts/01_baixar_gbif.py` — fotos de campo (`basisOfRecord=HUMAN_OBSERVATION`) com licença CC0/CC-BY declarada por registro e crédito gravado em `dados/creditos.csv`.
+- **Reforço para lagarta-do-cartucho:** KaraAgro AI Maize (Harvard Dataverse, DOI 10.7910/DVN/CXUMDS) — 16.552 imagens de campo com bounding box, recortadas pelas caixas para casar o enquadramento com o GBIF.
+- **IP102 foi descartado** (o documento antigo o recomendava): nenhuma das nossas espécies aparece nominalmente, o "Army worm" dele é provavelmente *Mythimna separata*, e a licença "free for academic usage" não autoriza redistribuição. PlantVillage também está fora — só doença foliar, sobre fundo cinza uniforme. A lista completa do que não usar está em `docs/04-guia-dataset.md`, §1.5.
 - **Fotos próprias:** na visita ao João e a vizinhos — mesmo 50 fotos por classe, tiradas com celular, no sol, com fundo bagunçado, valem mais do que 500 de laboratório. **Este é o diferencial do trabalho de vocês** e o que a banca vai valorizar.
 - **Augmentation:** rotação, brilho/contraste, blur leve, recorte aleatório — simula exatamente a foto ruim que vai chegar.
 - Meta realista: 200–400 imagens por classe após augmentation; acurácia top-1 esperada entre **75% e 90%** em imagens limpas, e sensivelmente menor em foto real de campo. **Reporte os dois números.** Um trabalho que mostra a queda e explica por quê vale mais que um que reporta só o número bonito.
@@ -176,13 +184,13 @@ else:
     rota = "humano"       # "Não consegui identificar. Leve na Casa da Agricultura."
 ```
 
-Por que isso importa: **os erros aqui não custam a mesma coisa.** Dizer "é pulgão" quando é lagarta faz o João gastar dinheiro com o produto errado e perder a lavoura mesmo assim. Dizer "não sei" custa apenas uma ida à Casa da Agricultura. Logo, o sistema deve ser **conservador de propósito** — calibre o limiar para errar para o lado do "não sei". Ajuste os limiares pela curva de precisão/revocação no conjunto de validação, não no chute.
+Por que isso importa: **os erros aqui não custam a mesma coisa.** Dizer "é vaquinha" quando é lagarta faz o João gastar dinheiro com o produto errado e perder a lavoura mesmo assim. Dizer "não sei" custa apenas uma ida à Casa da Agricultura. Logo, o sistema deve ser **conservador de propósito** — calibre o limiar para errar para o lado do "não sei". Ajuste os limiares pela curva de precisão/revocação no conjunto de validação, não no chute.
 
 ---
 
 ## 4. Base de conhecimento e RAG
 
-**Corpus curado, não raspado.** Para 5 pragas, são ~25 documentos — vocês leem e selecionam à mão. Fontes: circulares técnicas da Embrapa (milho e hortaliças), boletins da CATI/Casa da Agricultura, AGROFIT (registro de produtos por cultura/praga).
+**Corpus curado, não raspado.** Isto **já está feito**: as quatro pragas estão em `kb/fichas-pragas-milho.md`, com campos fixos, anexo de regras transversais e fontes citadas. As fontes usadas foram Embrapa (milho), Epagri, Incaper e CATI/Casa da Agricultura. O que falta é a **ingestão** dessas fichas — chunking, embeddings e retrieval —, não o conteúdo.
 
 Cada praga vira um registro com campos fixos:
 
@@ -320,8 +328,8 @@ documento_kb(id, praga_id, cultura, tipo_manejo, fonte, url,
 
 | Métrica | Meta | Como medir |
 |---|---|---|
-| Acurácia top-1, imagens limpas | ≥ 85% | Conjunto de teste separado do IP102 |
-| Acurácia top-1, **fotos reais de campo** | ≥ 65% | Fotos tiradas por vocês e pelo João — **o número que importa** |
+| Acurácia top-1, imagens limpas | ≥ 85% | Conjunto `teste` do split por observação (`scripts/03_dividir_treino_teste.py`) |
+| Acurácia top-1, **fotos reais de campo** | ≥ 65% | Fotos tiradas por vocês e pelo João — **o número que importa**. A meta não é chute: Craze et al. (2022) mediram, no milho, queda de 94,1% (teste do próprio dataset) para 55,1% em foto de campo, e 73,4% quando o modelo é treinado com imagem real. Ver §3 do relatório parcial. |
 | Precisão nas respostas dadas (rota "direto") | ≥ 90% | Dos casos em que o bot arriscou, quantos acertou |
 | Taxa de "não sei" | 10–25% | Alta demais = inútil; baixa demais = arrogante |
 | Latência p95 fim a fim | ≤ 30 s | Log de `latencia_ms` |
@@ -335,7 +343,7 @@ documento_kb(id, praga_id, cultura, tipo_manejo, fonte, url,
 | Risco | Prob. | Impacto | Mitigação |
 |---|---|---|---|
 | Verificação da Meta não sai a tempo | Média | Alto | Twilio em paralelo desde a semana 1; adaptador de canal |
-| Dataset insuficiente para 5 classes | **Alta** | Alto | Começar com 3 classes; augmentation; fotos próprias na visita |
+| Dataset desbalanceado entre as 5 classes | **Alta** | Alto | `lagarta_elasmo` e `milho_sadio` são as frágeis: use class weights, augmentation e fotos próprias; corte a classe na semana 4 se a matriz de confusão pedir |
 | Acurácia baixa em foto de campo | Alta | Médio | Porteiro de qualidade + pedir foto melhor + rota "não sei"; reportar honestamente |
 | Foto ruim (borrada, longe, escura) | Alta | Médio | Variância do Laplaciano para detectar borrão; mensagem com dica de como fotografar |
 | LLM inventar recomendação | Média | **Alto** | LLM não decide; prompt restrito ao trecho recuperado; validação de saída |
@@ -350,7 +358,7 @@ documento_kb(id, praga_id, cultura, tipo_manejo, fonte, url,
 | Semana | Entrega | Porta de saída |
 |---|---|---|
 | 1 | Repositório, `docker compose`, webhook que ecoa "recebi sua foto" | Mensagem de ida e volta funcionando |
-| 2 | **Visita 1 ao João** (diagnóstico + fotos + consentimento). Canal decidido. 3 classes fechadas | Termo assinado e ≥ 60 fotos reais |
+| 2 | **Visita 1 ao João** (diagnóstico + fotos + consentimento). Canal decidido. Classes confirmadas com ele | Termo assinado e ≥ 60 fotos reais |
 | 3 | Dataset montado, split treino/val/teste, augmentation | Baseline treinado, mesmo que ruim |
 | 4 | CNN com transfer learning; matriz de confusão | Acurácia ≥ 80% no teste limpo |
 | 5 | Base de conhecimento das 3 pragas (curada à mão) | 3 fichas completas e revisadas |
@@ -366,7 +374,7 @@ documento_kb(id, praga_id, cultura, tipo_manejo, fonte, url,
 
 ---
 
-## 13. Divisão para 5 pessoas
+## 13. Divisão para 6 pessoas
 
 | Frente | Responsabilidade | Não deixe acontecer |
 |---|---|---|
@@ -376,7 +384,9 @@ documento_kb(id, praga_id, cultura, tipo_manejo, fonte, url,
 | **Conversa e experiência** | Prompt, template de resposta, roteador de confiança, feedback | Escrever a resposta pensando na banca em vez do João |
 | **Integração, testes e comunidade** | Testes ponta a ponta, métricas, painel, relatório, **contato com o João** | Mais de uma pessoa ligando para o produtor |
 
-Uma pessoa só como ponto de contato com o João — ele não deve receber mensagem de cinco alunos diferentes.
+São 5 frentes para 6 pessoas: a segunda pessoa entra em **Dados e modelo**, que é a frente mais pesada e a que está no caminho crítico (curadoria manual do dataset é trabalho de duas pessoas, por §Fase 2 do guia).
+
+Uma pessoa só como ponto de contato com o João — ele não deve receber mensagem de seis alunos diferentes.
 
 **Ritual mínimo:** reunião semanal de 30 min com dia e hora fixos, branch protegida, PR com revisão de um colega. Se em duas semanas alguém não tiver commit, o problema é de escopo, não de esforço — redistribuam.
 

@@ -134,7 +134,7 @@ O detalhe amargo: o manejo oficialmente recomendado da cigarrinha é calendariza
 
 ### Decisão 1: as classes do classificador não são as pragas mais importantes
 
-São as pragas que (a) o produtor consegue fotografar, (b) têm sinal visual precoce, e (c) têm imagem pública suficiente para treinar. Cruzando os três critérios com o levantamento de imagens (ver `guia-dataset-fotos.md`):
+São as pragas que (a) o produtor consegue fotografar, (b) têm sinal visual precoce, e (c) têm imagem pública suficiente para treinar. Cruzando os três critérios com o levantamento de imagens (ver [`04-guia-dataset.md`](04-guia-dataset.md)):
 
 | Praga | Importa para o João? | Tem sinal visual precoce? | Tem imagem pública? | Entra? |
 |---|---|---|---|---|
