@@ -29,10 +29,27 @@ DIST_HASH = 4           # distancia de Hamming para considerar duplicata
 
 
 def variancia_laplaciano(caminho: Path) -> float:
+    """Variancia do Laplaciano pelo MAXIMO entre blocos 4x4 da imagem, nao
+    pela imagem inteira. Motivo (achado ao calibrar com dados/descartado/):
+    foto de macro com profundidade de campo rasa (inseto nitido, fundo
+    desfocado de proposito) tem variancia BAIXA na imagem inteira mesmo
+    sendo uma otima foto — a media dilui o bloco nitido com o fundo turvo.
+    Uma foto de verdade borrada (mao tremida) fica com TODOS os blocos com
+    variancia baixa; e' essa a diferenca que queremos capturar."""
     img = cv2.imread(str(caminho), cv2.IMREAD_GRAYSCALE)
     if img is None:
         return -1.0
-    return float(cv2.Laplacian(img, cv2.CV_64F).var())
+    h, w = img.shape
+    n = 4
+    bh, bw = h // n, w // n
+    if bh < 8 or bw < 8:
+        return float(cv2.Laplacian(img, cv2.CV_64F).var())
+    melhores = []
+    for i in range(n):
+        for j in range(n):
+            bloco = img[i * bh:(i + 1) * bh, j * bw:(j + 1) * bw]
+            melhores.append(cv2.Laplacian(bloco, cv2.CV_64F).var())
+    return float(max(melhores))
 
 
 def main():

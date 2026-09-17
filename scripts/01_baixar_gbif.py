@@ -40,6 +40,16 @@ CLASSES = {
     "lagarta_elasmo": "Elasmopalpus lignosella",
 }
 
+# "lagarta_X" é o estágio larval — mas a maioria das fotos no GBIF/iNaturalist
+# é de MARIPOSA ADULTA (quem fotografa bicho de jardim fotografa o que voa e
+# pousa, não a larva escondida na folha). Medido ao vivo: Spodoptera frugiperda
+# tem 1417 fotos de adulto contra 70 de larva; Helicoverpa zea, 2180 x 54.
+# Sem este filtro, o classificador aprenderia "mariposa marrom" em vez do dano
+# que o produtor realmente fotografa. "vaquinha" fica de fora do filtro porque
+# ali a praga QUE SE FOTOGRAFA é o besouro adulto.
+LIFE_STAGE_LARVA = {"lagarta_cartucho", "lagarta_espiga", "lagarta_elasmo"}
+LIFE_STAGES_ACEITOS = ["Larva", "Caterpillar", "Immature"]
+
 # Só licenças que permitem redistribuir. Se quiser mais volume e o trabalho for
 # só acadêmico sem publicar o dataset, acrescente "CC_BY_NC_4_0" — mas então
 # NÃO publique o dataset montado no GitHub.
@@ -65,7 +75,7 @@ def resolver_taxon_key(nome_cientifico: str) -> int | None:
     return key
 
 
-def buscar_ocorrencias(taxon_key: int, limite: int):
+def buscar_ocorrencias(taxon_key: int, limite: int, life_stages: list[str] | None = None):
     """Pagina a busca do GBIF. Devolve (occ_key, url_foto, licenca, autor)."""
     achados = []
     offset = 0
@@ -79,6 +89,8 @@ def buscar_ocorrencias(taxon_key: int, limite: int):
             ("offset", offset),
         ]
         params += [("license", l) for l in LICENCAS]
+        if life_stages:
+            params += [("lifeStage", s) for s in life_stages]
 
         r = requests.get(f"{GBIF}/occurrence/search", params=params,
                          headers=HEADERS, timeout=60)
@@ -152,7 +164,10 @@ def main():
             if not key:
                 continue
 
-            ocorrencias = buscar_ocorrencias(key, limite)
+            life_stages = LIFE_STAGES_ACEITOS if classe in LIFE_STAGE_LARVA else None
+            ocorrencias = buscar_ocorrencias(key, limite, life_stages)
+            if life_stages:
+                print(f"  filtrando por estagio de vida: {life_stages}")
             print(f"  {len(ocorrencias)} midias candidatas")
 
             pasta = raiz / classe
