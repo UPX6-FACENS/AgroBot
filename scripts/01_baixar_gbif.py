@@ -75,7 +75,8 @@ def resolver_taxon_key(nome_cientifico: str) -> int | None:
     return key
 
 
-def buscar_ocorrencias(taxon_key: int, limite: int, life_stages: list[str] | None = None):
+def buscar_ocorrencias(taxon_key: int, limite: int, life_stages: list[str] | None = None,
+                        licencas: list[str] | None = None):
     """Pagina a busca do GBIF. Devolve (occ_key, url_foto, licenca, autor)."""
     achados = []
     offset = 0
@@ -88,7 +89,7 @@ def buscar_ocorrencias(taxon_key: int, limite: int, life_stages: list[str] | Non
             ("limit", page),
             ("offset", offset),
         ]
-        params += [("license", l) for l in LICENCAS]
+        params += [("license", l) for l in (licencas or LICENCAS)]
         if life_stages:
             params += [("lifeStage", s) for s in life_stages]
 
@@ -142,8 +143,13 @@ def main():
     ap.add_argument("--max-por-classe", type=int, default=500)
     ap.add_argument("--saida", default="dados/bruto")
     ap.add_argument("--teste", action="store_true", help="baixa so 5 por classe")
+    ap.add_argument("--incluir-nc", action="store_true",
+                     help="acrescenta licenca CC_BY_NC_4_0 (mais volume, mas "
+                          "o dataset resultante NAO pode ser publicado/redistribuido "
+                          "— so treino local)")
     args = ap.parse_args()
 
+    licencas = LICENCAS + (["CC_BY_NC_4_0"] if args.incluir_nc else [])
     limite = 5 if args.teste else args.max_por_classe
     raiz = Path(args.saida)
     raiz.mkdir(parents=True, exist_ok=True)
@@ -165,7 +171,7 @@ def main():
                 continue
 
             life_stages = LIFE_STAGES_ACEITOS if classe in LIFE_STAGE_LARVA else None
-            ocorrencias = buscar_ocorrencias(key, limite, life_stages)
+            ocorrencias = buscar_ocorrencias(key, limite, life_stages, licencas)
             if life_stages:
                 print(f"  filtrando por estagio de vida: {life_stages}")
             print(f"  {len(ocorrencias)} midias candidatas")
