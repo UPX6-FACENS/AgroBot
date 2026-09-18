@@ -1,6 +1,8 @@
 dados/
 data/
-checkpoints/
+checkpoints/*
+!checkpoints/modelo.onnx
+!checkpoints/classes.json
 .git/
 .venv/
 venv/

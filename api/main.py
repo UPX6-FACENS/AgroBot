@@ -1,18 +1,23 @@
-"""API do "Doutor da Roça" — Semana 1 do cronograma: webhook que recebe
-foto/texto do WhatsApp e responde. Ainda sem CNN/RAG (isso entra a partir
-da Semana 6-8, ver docs/02-arquitetura.md); por enquanto so prova que o
-canal funciona de ponta a ponta.
+"""API do "Doutor da Roça" — webhook que recebe foto/texto do WhatsApp e
+responde com o diagnostico (CNN + busca estruturada na KB, ver
+pipeline/diagnostico.py). Roda sincrono dentro do request: sem LLM na
+jogada ainda, a inferencia inteira leva poucos milissegundos.
 
 Trocar de canal e' so mudar CANAL_ATIVO no .env — nenhum codigo daqui
 sabe se esta falando com Twilio, Meta ou o canal de teste local."""
 
+from io import BytesIO
+
+import httpx
 from fastapi import FastAPI, Request
+from PIL import Image
 
 from api.canais.canal_meta import CanalMeta
 from api.canais.canal_teste import CanalTeste
 from api.canais.canal_twilio import CanalTwilio
 from api.config import CANAL_ATIVO
 from api.modelos import Mensagem
+from pipeline.diagnostico import diagnosticar
 
 CANAIS = {"teste": CanalTeste, "twilio": CanalTwilio, "meta": CanalMeta}
 
@@ -48,7 +53,7 @@ async def receber_webhook(request: Request):
         return {"ok": True, "duplicada": True}
     _mensagens_vistas.add(mensagem.wa_message_id)
 
-    resposta = _responder(mensagem)
+    resposta = await _responder(mensagem)
     await canal.enviar(mensagem.remetente, resposta)
 
     corpo = {"ok": True}
@@ -57,10 +62,28 @@ async def receber_webhook(request: Request):
     return corpo
 
 
-def _responder(mensagem: Mensagem) -> str:
-    """Semana 1: so ecoa que recebeu. A partir da Semana 6 isso vira o
-    pipeline real: fila -> porteiro de qualidade -> CNN -> roteador de
-    confianca -> RAG -> LLM (ver docs/02-arquitetura.md secao 2)."""
-    if mensagem.tipo == "imagem":
-        return "Recebi sua foto! 📸 Em breve vou te dizer o que é."
-    return "Oi! Manda uma foto da praga ou da folha que você quer identificar."
+async def _obter_imagem(midia_url: str) -> Image.Image:
+    if midia_url.startswith("http"):
+        async with httpx.AsyncClient() as client:
+            r = await client.get(midia_url, timeout=15)
+            r.raise_for_status()
+        return Image.open(BytesIO(r.content))
+    return Image.open(midia_url)  # caminho local — so pra testar sem hospedar a foto
+
+
+async def _responder(mensagem: Mensagem) -> str:
+    """Foto -> porteiro de qualidade -> CNN -> roteador de confianca ->
+    resposta (ver pipeline/diagnostico.py). Texto sem foto so orienta a
+    mandar uma."""
+    if mensagem.tipo != "imagem":
+        return "Oi! Manda uma foto da praga ou da folha que você quer identificar."
+
+    if not mensagem.midia_url:
+        return "Não recebi nenhuma foto anexada. Pode mandar de novo?"
+
+    try:
+        imagem = await _obter_imagem(mensagem.midia_url)
+    except Exception:
+        return "Não consegui abrir sua foto. Pode mandar de novo?"
+
+    return diagnosticar(imagem)
