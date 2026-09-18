@@ -3,12 +3,14 @@
 # precisa entrar na imagem Docker da API, que so faz INFERENCIA (ONNX).
 fastapi>=0.110
 uvicorn[standard]>=0.29
+python-dotenv>=1.0   # carrega .env local (Docker ja recebe via env_file)
 python-multipart>=0.0.9   # FastAPI precisa disso pra ler Request.form() (Twilio)
 httpx>=0.27                # chamadas assincronas a Graph API (Meta) e download de foto
 twilio>=9.0                # SDK oficial — nunca lib nao-oficial de WhatsApp
 
-# pipeline/ (diagnostico: porteiro de qualidade + CNN + busca na KB)
+# pipeline/ (diagnostico: porteiro de qualidade + CNN + busca na KB + LLM)
 pillow>=10.0
 numpy>=1.26
 onnxruntime>=1.17
 opencv-python-headless>=4.9
+anthropic>=0.40

@@ -22,6 +22,8 @@ from api.modelos import Mensagem
 
 
 class CanalTeste(CanalAdapter):
+    RESPONDER_SINCRONO = True  # ver comentario em base.py
+
     def __init__(self):
         self.ultima_resposta: str | None = None
 

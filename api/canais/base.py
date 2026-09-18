@@ -11,6 +11,15 @@ from api.modelos import Mensagem
 
 
 class CanalAdapter(ABC):
+    # True so no canal de teste. O pipeline (CNN + LLM) leva ~3s — muito
+    # acima do "responda 200 OK em <1s" que Twilio/Meta exigem (senao
+    # reenviam o webhook e duplicam a resposta, ver docs/02-arquitetura.md
+    # secao 6). Nos canais de verdade, main.py processa em background e
+    # responde na hora; no canal de teste, mantemos sincrono de proposito
+    # — ninguem vai dar timeout num curl de teste, e ver a resposta na
+    # hora é mais pratico pra testar manualmente.
+    RESPONDER_SINCRONO = False
+
     @abstractmethod
     async def verificar(self, request: Request):
         """Handshake do GET /webhook. So a Meta usa isso de verdade

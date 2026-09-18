@@ -1,20 +1,24 @@
-"""Monta a resposta final — AINDA SEM LLM.
+"""Monta a resposta final.
 
-docs/02-arquitetura.md secao 5 descreve um LLM que so REDIGE, a partir do
-trecho recuperado, num template fixo de ~90 palavras. Ainda nao temos
-chave de API de LLM configurada (decisao do time: qual provedor, quem
-paga) — enquanto isso nao acontece, esta versao monta a resposta direto
-a partir do texto da ficha (que ja foi escrito em linguagem simples,
-pensando no produtor, entao serve como substituto razoavel).
+docs/02-arquitetura.md secao 5: um LLM so REDIGE, a partir do trecho
+recuperado, num template fixo de ~90 palavras — nunca decide a praga,
+nunca inventa produto. Ver pipeline/llm.py pro prompt e as regras.
 
-Trocar isto por uma chamada de LLM de verdade e' so questao de: pegar a
-ficha inteira (kb.buscar_ficha), pedir pro LLM redigir seguindo as regras
-da secao 5, e usar o resultado aqui em vez do texto mecanico."""
+O LLM (Claude Haiku 4.5) so entra nos casos com conteudo tecnico de
+verdade pra resumir — rota "direto" e "duvida" com praga identificada.
+Os casos triviais (porteiro reprovou, rota "humano", milho_sadio) ficam
+com resposta fixa aqui mesmo, sem custo de API nem risco de alucinacao
+onde nao precisa. Se a chamada ao LLM falhar (rede, chave invalida), cai
+pra uma versao mecanica extraida direto da ficha — o produtor sempre
+recebe alguma resposta."""
 
+import logging
 import re
 
-from pipeline import kb
+from pipeline import kb, llm
 from pipeline.roteador import decidir_rota
+
+logger = logging.getLogger(__name__)
 
 
 def _primeiro_item_numerado(texto: str) -> str:
@@ -71,6 +75,24 @@ def montar_resposta(classe: str, confianca: float) -> str:
         )
 
     nome = _nome_curto(ficha)
+
+    try:
+        return llm.redigir(
+            classe_nome=nome,
+            confianca_pct=pct,
+            rota=rota,
+            como_reconhecer_o_dano=ficha.get("como_reconhecer_o_dano", ""),
+            manejo_ordenado_por_custo=ficha.get("manejo_ordenado_por_custo", ""),
+        )
+    except Exception:
+        logger.exception("Falha ao chamar o LLM — caindo pra resposta mecanica")
+        return _resposta_mecanica(nome, pct, rota, ficha)
+
+
+def _resposta_mecanica(nome: str, pct: int, rota: str, ficha: dict) -> str:
+    """Fallback sem LLM — usado so se a chamada ao Claude falhar (rede,
+    chave invalida, limite de taxa). Garante que o produtor sempre recebe
+    alguma resposta, mesmo com a API fora do ar."""
     dano = _primeiro_item_numerado(ficha.get("como_reconhecer_o_dano", ""))
     manejo = _primeiro_item_numerado(ficha.get("manejo_ordenado_por_custo", ""))
 
@@ -80,9 +102,8 @@ def montar_resposta(classe: str, confianca: float) -> str:
             f"O que ela faz: {dano}\n\n"
             "O que fazer, começando pelo mais barato:\n"
             f"1. {manejo}\n"
-            "2. Se estiver tomando conta, leve uma folha na Casa da Agricultura.\n\n"
-            "⚠️ Isso é uma ajuda, não é receita. Para veneno, é preciso receituário agronômico.\n\n"
-            "Acertei? 👍 👎"
+            "2. Se estiver tomando conta, leve uma folha na Casa da Agricultura."
+            + llm.RODAPE_FIXO
         )
 
     # rota == "duvida"
