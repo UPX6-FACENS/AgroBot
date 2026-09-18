@@ -5,11 +5,12 @@ pillow>=10.0
 imagehash>=4.3
 opencv-python-headless>=4.9
 
-# Treino do classificador — descomente quando chegar na fase 4
-# torch>=2.2
-# torchvision>=0.17
-# scikit-learn>=1.4
-# matplotlib>=3.8
+# Treino do classificador (fase 4)
+torch>=2.2
+torchvision>=0.17
+scikit-learn>=1.4
+matplotlib>=3.8
+onnxscript>=0.1   # exportacao para ONNX (torch.onnx.export, opset>=17)
 
 # Backend do bot — descomente quando começar a fase de integração
 # fastapi>=0.110
