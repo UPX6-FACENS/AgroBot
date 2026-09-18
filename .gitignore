@@ -22,6 +22,7 @@ checkpoints/
 # Segredos — token da Meta/Twilio, chave do LLM. NUNCA comitar.
 .env
 .env.*
+!.env.example
 *.pem
 credentials.json
 config.local.*

@@ -60,24 +60,59 @@ docs/
 kb/
 └── fichas-pragas-milho.md  Base de conhecimento que alimenta o RAG
 scripts/
-├── 01_baixar_gbif.py       Baixa fotos de campo com licença redistribuível
-├── 02_limpar_duplicatas.py Remove duplicata, borrão, imagem pequena/corrompida
-└── 03_dividir_treino_teste.py  Split por observação, sem vazamento
+├── 01_baixar_gbif.py           Baixa fotos de campo com licença redistribuível
+├── 02_limpar_duplicatas.py     Remove duplicata, borrão, imagem pequena/corrompida
+├── 03_dividir_treino_teste.py  Split por observação, sem vazamento
+├── 04_recortar_karaagro.py     Recorta o KaraAgro AI Maize por bounding box
+└── 05_treinar_cnn.py           Treina o classificador (MobileNetV3, transfer learning)
+api/
+├── main.py                 Rotas do webhook (GET/POST /webhook)
+├── config.py                Variáveis de ambiente (canal ativo, credenciais)
+├── modelos.py                Mensagem — formato comum entre canais
+└── canais/
+    ├── base.py               Interface CanalAdapter
+    ├── canal_teste.py        Canal local, sem depender de conta nenhuma
+    ├── canal_twilio.py       Twilio WhatsApp Sandbox (não testado com conta real)
+    └── canal_meta.py         Meta WhatsApp Cloud API (não testado com conta real)
 ```
 
-## Como rodar os scripts de dataset
+## Como rodar os scripts de dataset e treino
 
 ```bash
 pip install -r requirements.txt
 
 python scripts/01_baixar_gbif.py --teste          # 5 fotos por classe, para conferir
 python scripts/01_baixar_gbif.py --max-por-classe 600
+python scripts/01_baixar_gbif.py --max-por-classe 400 --incluir-nc  # mais volume, so uso local (nao publicar)
 
 python scripts/02_limpar_duplicatas.py --dir dados/bruto            # simula
 python scripts/02_limpar_duplicatas.py --dir dados/bruto --aplicar  # move
 
+python scripts/04_recortar_karaagro.py --dir <pasta extraida do KaraAgro>
+
 python scripts/03_dividir_treino_teste.py
+python scripts/05_treinar_cnn.py
 ```
+
+## Como rodar a API (webhook)
+
+```bash
+cp .env.example .env        # CANAL_ATIVO=teste já funciona sem conta nenhuma
+docker compose up --build
+# ou local, sem Docker:
+pip install -r api/requirements.txt
+uvicorn api.main:app --reload
+```
+
+Testar o ida-e-volta sem precisar de conta no Twilio/Meta:
+
+```bash
+curl -X POST http://localhost:8000/webhook \
+  -H "Content-Type: application/json" \
+  -d '{"remetente": "5511999999999", "tipo": "imagem", "midia_url": "http://x/foto.jpg"}'
+```
+
+Trocar para Twilio ou Meta é só mudar `CANAL_ATIVO` no `.env` e preencher as credenciais — nenhum código muda (ver `api/canais/base.py`).
 
 O passo a passo completo, com o protocolo de foto para a visita ao produtor, está em [`docs/04-guia-dataset.md`](docs/04-guia-dataset.md).
 

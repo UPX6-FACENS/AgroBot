@@ -1,0 +1,15 @@
+# Semana 1 do cronograma: so a API, pra provar o webhook de ponta a ponta.
+# Redis/worker/Postgres entram quando o pipeline de verdade for montado
+# (Semana 6-8, ver docs/02-arquitetura.md) — nao adianta subir servico
+# que ainda nao tem quem use.
+services:
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./api:/app/api  # hot-reload em dev: edita fora, roda dentro

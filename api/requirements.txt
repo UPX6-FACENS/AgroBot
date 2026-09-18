@@ -1,0 +1,8 @@
+# Dependencias so da API (webhook) — deliberadamente separado do
+# requirements.txt da raiz, que tem torch/opencv do treino e nao precisa
+# entrar na imagem Docker da API.
+fastapi>=0.110
+uvicorn[standard]>=0.29
+python-multipart>=0.0.9   # FastAPI precisa disso pra ler Request.form() (Twilio)
+httpx>=0.27                # chamadas assincronas a Graph API (Meta)
+twilio>=9.0                # SDK oficial — nunca lib nao-oficial de WhatsApp

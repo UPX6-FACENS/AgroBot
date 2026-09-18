@@ -12,9 +12,10 @@ scikit-learn>=1.4
 matplotlib>=3.8
 onnxscript>=0.1   # exportacao para ONNX (torch.onnx.export, opset>=17)
 
-# Backend do bot — descomente quando começar a fase de integração
-# fastapi>=0.110
-# uvicorn[standard]>=0.29
+# API (webhook) — dependencias proprias em api/requirements.txt, deliberadamente
+# separado pra imagem Docker da API nao carregar torch/opencv do treino.
+
+# Worker (fila + pipeline de diagnostico) — descomente quando chegar na Semana 6-8
 # redis>=5.0
 # rq>=1.16
 # psycopg[binary]>=3.1
