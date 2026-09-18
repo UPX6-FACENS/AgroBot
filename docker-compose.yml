@@ -13,3 +13,5 @@ services:
       - .env
     volumes:
       - ./api:/app/api  # hot-reload em dev: edita fora, roda dentro
+      - ./dados:/app/dados:ro          # testar com as fotos do dataset
+      - ./fotos_teste:/app/fotos_teste:ro  # solta qualquer foto sua aqui pra testar
