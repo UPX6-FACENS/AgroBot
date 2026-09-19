@@ -25,7 +25,7 @@ Chatbot de WhatsApp para identificação de pragas por foto, com base de conheci
 |---|---|---|
 | RF01 | Receber foto enviada pelo produtor via WhatsApp | "tirar uma foto do inseto ou da folha doente" |
 | RF02 | Aceitar texto ou **áudio** junto da foto ("o que é isso na minha couve?") | João digita pouco; áudio é o hábito dele |
-| RF03 | Identificar a praga entre um conjunto **fechado** de 5 classes (4 pragas + planta sadia) | Escopo definido pelo grupo — ver §3.1 |
+| RF03 | Identificar a praga entre um conjunto **fechado** de 4 classes (3 pragas + planta sadia) | Escopo definido pelo grupo — ver §3.1 |
 | RF04 | **Rejeitar** com honestidade quando não tiver certeza | Confiança do produtor na IA é a pergunta aberta do checklist |
 | RF05 | Responder em português simples: o que é, qual o dano, o que fazer | "resposta rápida e simples" |
 | RF06 | Ordenar as recomendações **do mais barato para o mais caro** | "sem gastar muito" é prioridade dele, não do grupo |
@@ -130,7 +130,7 @@ Esta é a decisão que define o projeto. Três caminhos:
 
 | | **A. VLM direto** | **B. CNN própria** | **C. Híbrido (recomendado)** |
 |---|---|---|---|
-| Como funciona | Manda a foto para um modelo multimodal (GPT-4o, Gemini) e pede o diagnóstico | Treina uma rede própria nas 5 classes | **CNN decide a praga; RAG traz o manejo; LLM só escreve** |
+| Como funciona | Manda a foto para um modelo multimodal (GPT-4o, Gemini) e pede o diagnóstico | Treina uma rede própria nas 4 classes | **CNN decide a praga; RAG traz o manejo; LLM só escreve** |
 | Tempo até funcionar | ~1 semana | ~4 semanas | ~5 semanas |
 | Dataset | Nenhum | Obrigatório | Obrigatório |
 | Dá para medir acurácia? | Difícil — a saída é texto livre | Sim, matriz de confusão | Sim |
@@ -148,26 +148,25 @@ Isso responde direto à pergunta que o próprio grupo deixou em aberto no checkl
 
 A lista original deste documento cobria hortaliças (traça, pulgão, mosca-branca). Ela foi **substituída** depois do levantamento de imagens de `docs/03-panorama-pragas.md` e `docs/04-guia-dataset.md`: a cultura foi fechada em milho e as classes saíram do que existe de foto pública com licença limpa.
 
-| # | Classe | Espécie | Por que entra |
-|---|---|---|---|
-| 0 | `lagarta_cartucho` | *Spodoptera frugiperda* | A mais destrutiva do milho; dano visual muito característico (cartucho raspado) |
-| 1 | `lagarta_espiga` | *Helicoverpa zea* | Decisiva para o milho verde de feira, que é o que o João vende |
-| 2 | `vaquinha` | *Diabrotica speciosa* | Espécie brasileira; furo redondo na folha, dano inconfundível |
-| 3 | `lagarta_elasmo` | *Elasmopalpus lignosella* | Ataca o colo da planta nova; ficha já curada em `kb/fichas-pragas-milho.md` |
-| 4 | `milho_sadio` | *Zea mays* | **Classe negativa obrigatória** — sem ela o modelo é forçado a escolher uma praga até para foto de planta boa. 518 ocorrências no GBIF, a menor base das cinco |
+| # | Classe | Espécie | Por que entra | Dataset (pós-limpeza) |
+|---|---|---|---|---|
+| 0 | `lagarta_cartucho` | *Spodoptera frugiperda* | A mais destrutiva do milho; dano visual muito característico (cartucho raspado) | 2.943 |
+| 1 | `lagarta_espiga` | *Helicoverpa zea* | Decisiva para o milho verde de feira, que é o que o João vende | 351 |
+| 2 | `vaquinha` | *Diabrotica speciosa* | Espécie brasileira; furo redondo na folha, dano inconfundível | 458 |
+| 3 | `milho_sadio` | — | **Classe negativa obrigatória** — sem ela o modelo é forçado a escolher uma praga até para foto de planta boa | 627 |
 
 Rejeição (`desconhecido`) **não é classe treinada** — é limiar de confiança, ver §3.3.
 
-> **Risco assumido conscientemente:** cinco classes é uma a mais do que o recomendado para um primeiro treino, e `lagarta_elasmo` é a de menor volume (1.010 fotos no GBIF contra 7.911 da lagarta-do-cartucho). O critério de corte está definido: se a matriz de confusão da semana 4 mostrar `lagarta_elasmo` sendo trocada por `lagarta_cartucho`, a classe sai ou é fundida — não se insiste nela.
+> **`lagarta_elasmo` (*Elasmopalpus lignosella*) foi avaliada e descartada — com dado, não por chute.** Cinco classes era o plano original, com um critério de corte combinado: cortar na semana 4 se a matriz de confusão mostrasse ela sendo trocada por `lagarta_cartucho`. Na prática o corte veio antes, já na coleta: o GBIF não tem **nenhuma** foto de larva dela com licença aberta (o "1.010" de uma contagem antiga é de ocorrências totais, majoritariamente do inseto adulto — que não é o que o produtor fotografa, ver `docs/04-guia-dataset.md`). Testamos até com licença CC BY-NC ampliada (uso só local, sem publicar) e a resposta continuou zero. A única fonte alternativa que rendeu algo foi a anotação de estágio de vida da API do iNaturalist — 21 fotos, 17 depois da limpeza. Abaixo de qualquer limiar de treino confiável. Fica documentado, e a classe volta se aparecer mais volume (ex.: foto de campo real).
 
-> `milho_sadio` é a única classe sem fonte direta: não existe foto catalogada como "milho sadio". O script 01 busca ocorrências de *Zea mays* e essas imagens **exigem curadoria manual** antes de entrar no treino. As fotos da visita ao João são a melhor fonte para ela.
+> **De onde saiu `milho_sadio`:** a rota original (ocorrências de *Zea mays* no GBIF, 518 com curadoria manual pesada) foi trocada pelo **KaraAgro AI Maize** (Harvard Dataverse, DOI 10.7910/DVN/CXUMDS, CC BY) — a categoria "healthy" do dataset já é foto de campo de milharal saudável rotulada como tal, 627 imagens limpas sem precisar filtrar milharal de longe, espiga colhida ou planta doente na mão.
 
 **A cigarrinha-do-milho fica fora do classificador de propósito** — 46 fotos públicas no mundo, sintoma que só aparece 30 dias depois da infecção e nenhum nível de controle. Ela é tratada por regra de calendário, não por imagem (`docs/03-panorama-pragas.md`, §6).
 
 ### 3.2 Dados
 
-- **Base principal:** GBIF, via `scripts/01_baixar_gbif.py` — fotos de campo (`basisOfRecord=HUMAN_OBSERVATION`) com licença CC0/CC-BY declarada por registro e crédito gravado em `dados/creditos.csv`.
-- **Reforço para lagarta-do-cartucho:** KaraAgro AI Maize (Harvard Dataverse, DOI 10.7910/DVN/CXUMDS) — 16.552 imagens de campo com bounding box, recortadas pelas caixas para casar o enquadramento com o GBIF.
+- **Base principal:** GBIF, via `scripts/01_baixar_gbif.py` — fotos de campo (`basisOfRecord=HUMAN_OBSERVATION`) com licença CC0/CC-BY declarada por registro e crédito gravado em `dados/creditos.csv`. Filtrado por `lifeStage` nas classes de lagarta (93% das fotos do GBIF são de mariposa adulta, não larva — sem esse filtro o classificador aprenderia "mariposa marrom" em vez do dano que o produtor fotografa).
+- **KaraAgro AI Maize** (Harvard Dataverse, DOI 10.7910/DVN/CXUMDS) — fonte principal de `lagarta_cartucho` (recorte por bounding box PASCAL VOC: larva, dano foliar, frass, ovo) e única fonte de `milho_sadio`.
 - **IP102 foi descartado** (o documento antigo o recomendava): nenhuma das nossas espécies aparece nominalmente, o "Army worm" dele é provavelmente *Mythimna separata*, e a licença "free for academic usage" não autoriza redistribuição. PlantVillage também está fora — só doença foliar, sobre fundo cinza uniforme. A lista completa do que não usar está em `docs/04-guia-dataset.md`, §1.5.
 - **Fotos próprias:** na visita ao João e a vizinhos — mesmo 50 fotos por classe, tiradas com celular, no sol, com fundo bagunçado, valem mais do que 500 de laboratório. **Este é o diferencial do trabalho de vocês** e o que a banca vai valorizar.
 - **Augmentation:** rotação, brilho/contraste, blur leve, recorte aleatório — simula exatamente a foto ruim que vai chegar.
@@ -343,7 +342,7 @@ documento_kb(id, praga_id, cultura, tipo_manejo, fonte, url,
 | Risco | Prob. | Impacto | Mitigação |
 |---|---|---|---|
 | Verificação da Meta não sai a tempo | Média | Alto | Twilio em paralelo desde a semana 1; adaptador de canal |
-| Dataset desbalanceado entre as 5 classes | **Alta** | Alto | `lagarta_elasmo` e `milho_sadio` são as frágeis: use class weights, augmentation e fotos próprias; corte a classe na semana 4 se a matriz de confusão pedir |
+| Dataset desbalanceado entre classes | Média | Alto | Resolvido pra `lagarta_cartucho`/`espiga`/`vaquinha`/`milho_sadio` (todas ≥ 350 imagens); usar class weights no treino mesmo assim — `lagarta_cartucho` ainda tem ~8x mais dado que `lagarta_espiga` |
 | Acurácia baixa em foto de campo | Alta | Médio | Porteiro de qualidade + pedir foto melhor + rota "não sei"; reportar honestamente |
 | Foto ruim (borrada, longe, escura) | Alta | Médio | Variância do Laplaciano para detectar borrão; mensagem com dica de como fotografar |
 | LLM inventar recomendação | Média | **Alto** | LLM não decide; prompt restrito ao trecho recuperado; validação de saída |

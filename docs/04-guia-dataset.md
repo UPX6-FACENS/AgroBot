@@ -26,22 +26,21 @@ Fizemos a varredura das fontes públicas. Três achados que precisam ser digerid
 
 **3. A praga nº 1 do Brasil é justamente a que a visão computacional não resolve.** A cigarrinha tem 46 fotos públicas, o sintoma dela aparece 30 dias depois da infecção, e não existe nível de controle porque um único inseto infectivo já inutiliza a planta. Ela sai do classificador e entra por regra de calendário — ver [`03-panorama-pragas.md`](03-panorama-pragas.md), §6.
 
-### Decisão de classes (FECHADA)
+### Decisão de classes (FECHADA — e já testada com dado real)
 
 ```
-0. lagarta_cartucho     ← nº 1 para o pequeno produtor, 7.911 fotos
-1. lagarta_espiga       ← decisiva para milho verde de feira, 12.577 + 21.955
-2. vaquinha             ← espécie brasileira, dano visual inconfundível, 2.522
-3. lagarta_elasmo       ← ataca o colo da planta nova, 1.010 — ficha já curada em kb/
-4. milho_sadio          ← classe negativa, obrigatória, 518 (Zea mays, medido no GBIF)
+0. lagarta_cartucho     ← nº 1 para o pequeno produtor, 2.943 fotos (GBIF larva + KaraAgro)
+1. lagarta_espiga       ← decisiva para milho verde de feira, 351 fotos (GBIF)
+2. vaquinha             ← espécie brasileira, dano visual inconfundível, 458 fotos (GBIF)
+3. milho_sadio          ← classe negativa, obrigatória, 627 fotos (KaraAgro AI Maize)
    (+ rejeição por limiar de confiança, não é classe treinada)
 ```
 
 > **Por que `milho_sadio` é obrigatória:** sem ela, o modelo é obrigado a escolher uma praga para toda foto que chegar — inclusive para a foto de uma planta perfeitamente boa. Com ela, "não tem nada aqui" vira uma resposta possível.
 
-> **De onde vem a foto de `milho_sadio`:** não existe fonte pública rotulada assim. O script 01 busca ocorrências de *Zea mays* no GBIF: são **518 ocorrências** com foto e licença CC0/CC-BY (medido na API em setembro/2026), e elas trazem milharal de longe, espiga colhida, grão, planta doente e planta boa tudo junto. **Essa classe é a que mais exige curadoria manual**, e as fotos da visita ao João são a melhor fonte para ela. Se sobrar menos de 200 imagens limpas, é sinal de que ela precisa vir quase toda de campo.
+> **De onde vem a foto de `milho_sadio`:** não existe fonte pública rotulada assim no GBIF de forma limpa — a rota inicial (ocorrências de *Zea mays*, ~518, misturando milharal de longe, espiga colhida, grão e planta doente) exigiria curadoria manual pesada demais. Resolvida com o **KaraAgro AI Maize** (Harvard Dataverse, DOI 10.7910/DVN/CXUMDS, CC BY): a categoria "healthy" do dataset já é foto de campo de milharal saudável rotulada como tal — 627 imagens limpas, sem curadoria manual de milharal-de-longe.
 
-> **O risco de começar com cinco, assumido em reunião:** cinco classes com dataset desigual costuma render acurácia pior que três com dataset bom, e `lagarta_elasmo` é a de menor volume. O critério de corte fica registrado desde já: se a matriz de confusão da semana 4 mostrar `lagarta_elasmo` sendo trocada por `lagarta_cartucho`, a classe é fundida ou removida — não se insiste nela.
+> **`lagarta_elasmo` foi testada e ficou de fora — com dado, não com chute.** A ideia original era cinco classes, com um critério de corte combinado: tirar na semana 4 se a matriz de confusão mostrasse ela sendo confundida com `lagarta_cartucho`. Na prática o corte veio antes, na própria coleta: o GBIF **não tem nenhuma foto de larva dela com licença aberta** — o "1.010" de uma contagem antiga soma ocorrências totais, majoritariamente do inseto **adulto** (que não é o que aparece na lavoura do produtor). Testado até com licença CC BY-NC ampliada (uso só local, sem publicar o dataset) e o resultado continuou zero. A única fonte alternativa que rendeu algo foi a anotação de estágio de vida da própria API do iNaturalist (não o espelho do GBIF): 21 fotos, 17 depois da limpeza — abaixo de qualquer limiar confiável de treino. Ficam guardadas em `dados/bruto/lagarta_elasmo/` pra quando aparecer mais volume (ex.: foto de campo real na visita).
 
 ---
 
@@ -58,8 +57,8 @@ dados/
 │   ├── lagarta_cartucho/
 │   ├── lagarta_espiga/
 │   ├── vaquinha/
-│   ├── lagarta_elasmo/
-│   └── milho_sadio/
+│   ├── milho_sadio/
+│   └── lagarta_elasmo/     # fora do treino (pouco dado) — guardado, não apagar
 ├── bruto_campo/        # fotos que VOCÊS tiraram — nunca misturar com bruto/
 │   └── (mesmas classes)
 ├── descartado/         # o que o script 02 rejeitou, com o motivo
@@ -265,5 +264,5 @@ Se a semana 4 fechar com matriz de confusão em mãos, mesmo feia, a frente de d
 1. **Deixar o `creditos.csv` para depois.** Não tem depois.
 2. **Misturar fundo de estúdio com foto de campo.** O modelo aprende o fundo e a acurácia mente.
 3. **Split por foto em vez de por observação.** Acurácia inflada que desaba em campo.
-4. **Insistir numa classe que não fecha.** Três classes boas batem cinco ruins. Fechamos em cinco de propósito, mas com data marcada para reavaliar: matriz de confusão da semana 4 na mão, `lagarta_elasmo` sai se estiver atrapalhando.
+4. **Insistir numa classe que não fecha.** Quatro classes boas batem cinco ruins. Era pra ser cinco, com data marcada pra reavaliar `lagarta_elasmo` na semana 4 — mas o corte veio antes, direto na coleta (zero foto de larva com licença aberta), e foi isso que evitou insistir numa classe sem dado.
 5. **Não ir a campo.** Sem foto real, vocês não têm como saber se o modelo funciona — e a banca vai perguntar exatamente isso.

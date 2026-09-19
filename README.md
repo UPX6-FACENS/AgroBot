@@ -38,17 +38,16 @@ Detalhes em [`docs/02-arquitetura.md`](docs/02-arquitetura.md).
 
 **Classes do classificador:**
 
-| Classe | Por que entra | Fotos públicas (GBIF) |
+| Classe | Por que entra | Dataset atual (pós-limpeza) |
 |---|---|---|
-| `lagarta_cartucho` | Praga nº 1 para quem planta sem semente Bt | 7.911 |
-| `lagarta_espiga` | Decisiva para milho verde de feira | 12.577 + 21.955 |
-| `vaquinha` | Espécie brasileira, dano visual inconfundível | 2.522 |
-| `lagarta_elasmo` | Ataca o colo da planta nova; ficha já curada em `kb/` | 1.010 |
-| `milho_sadio` | Classe negativa — permite responder "não tem nada aqui" | 518 (*Zea mays*) + fotos da visita |
+| `lagarta_cartucho` | Praga nº 1 para quem planta sem semente Bt | 2.943 (GBIF larva + KaraAgro AI Maize) |
+| `lagarta_espiga` | Decisiva para milho verde de feira | 351 (GBIF, incl. licença CC BY-NC p/ uso local) |
+| `vaquinha` | Espécie brasileira, dano visual inconfundível | 458 (GBIF) |
+| `milho_sadio` | Classe negativa — permite responder "não tem nada aqui" | 627 (KaraAgro AI Maize, fotos de campo rotuladas "healthy") |
 
-São **cinco classes**. É uma a mais do que o recomendado para um primeiro treino: se a matriz de confusão da semana 4 mostrar `lagarta_elasmo` sendo confundida com `lagarta_cartucho`, a decisão é fundir ou remover essa classe, não insistir nela.
+São **quatro classes** treinadas hoje. `lagarta_elasmo` (*Elasmopalpus lignosella*) foi avaliada e **descartada por falta de dado real**, não por suposição: o GBIF não tem nenhuma foto de larva dela com licença aberta (mesmo testando com licença CC BY-NC ampliada), e a única fonte alternativa encontrada (anotação de estágio de vida da API do iNaturalist) rendeu só 17 imagens utilizáveis — abaixo de qualquer limiar de treino confiável. Isso já satisfaz o critério de corte que o grupo tinha combinado ("se não tiver dado, a classe sai") — só que a decisão veio antes da matriz de confusão da semana 4, na fase de coleta mesmo. Fica documentada em `docs/04-guia-dataset.md` e pode ser revisitada se aparecer mais volume (ex.: fotos de campo reais).
 
-`milho_sadio` é a única classe que não sai direto do script de download — não existe "foto de milho sadio" catalogada como tal. O script busca ocorrências de *Zea mays* no GBIF, e essas fotos **precisam de curadoria manual** (descartar planta doente, espiga colhida, milharal de longe) antes de virar classe. As fotos da visita ao João são a melhor fonte para ela.
+`milho_sadio` não tinha fonte pública direta — resolvida com o **KaraAgro AI Maize** (Harvard Dataverse, DOI 10.7910/DVN/CXUMDS, CC BY): a categoria "healthy" do dataset são fotos de campo de milharal saudável já rotuladas, sem precisar da rota original (ocorrências de *Zea mays* no GBIF + curadoria manual pesada).
 
 Rejeição não é classe treinada: é limiar de confiança. Se o modelo não tem certeza, o bot diz que não sabe e encaminha para a Casa da Agricultura.
 
