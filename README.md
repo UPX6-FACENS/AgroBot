@@ -105,6 +105,8 @@ python scripts/05_treinar_cnn.py
 
 A conexão real com o WhatsApp fica em [`whatsapp/`](whatsapp/), via **Evolution API** (não oficial: conecta como aparelho vinculado, pelo QR Code). Ela usa o mesmo pipeline de diagnóstico da raiz (`pipeline/`, `kb/`, `checkpoints/`). O passo a passo completo (Docker, QR Code, ngrok) está em [`whatsapp/README.md`](whatsapp/README.md).
 
+**Dia da apresentação:** siga o [`docs/guia-apresentacao.pdf`](docs/guia-apresentacao.pdf) — preparar o notebook, ligar o bot, roteiro da demo, desligar e problemas comuns. O `whatsapp/configurar.ps1` cria a instância e aponta o webhook com um comando só.
+
 ## Como rodar a API (webhook)
 
 ```bash
