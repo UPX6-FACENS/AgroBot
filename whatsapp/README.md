@@ -6,6 +6,8 @@ Esta pasta é a **integração com o WhatsApp**: recebe as mensagens do WhatsApp
 
 > **Estado atual:** o pipeline de análise é o **real**, das pastas `pipeline/`, `kb/` e `checkpoints/` na raiz deste repositório: porteiro de qualidade da foto → CNN (MobileNetV3 em ONNX, 4 classes) → roteador de confiança → ficha da base de conhecimento → Claude Haiku só reescreve em linguagem simples. A ligação entre o webhook e o pipeline fica em `analise.py`.
 
+> **Dia da apresentação:** siga o [`docs/05-guia-apresentacao.pdf`](../docs/05-guia-apresentacao.pdf) — checklist, passo a passo, roteiro da demo e problemas comuns.
+
 ---
 
 ## Como funciona
@@ -33,6 +35,7 @@ Evolution API (Docker) ──► ngrok ──► Webhook FastAPI (este projeto)
 | `main.py` | FastAPI e o endpoint `/webhook` |
 | `handlers.py` | Filtros dos eventos, tratamento das mensagens e feedback |
 | `evolution.py` | Chamadas à Evolution API (enviar texto, baixar imagem) |
+| `configurar.ps1` | Cria a instância e aponta o webhook pro ngrok com um comando só |
 | `analise.py` | Ponte entre o webhook e o pipeline: decodifica a foto e chama o diagnóstico |
 | `../pipeline/` | Pipeline de diagnóstico (porteiro, CNN, roteador, base de conhecimento, LLM) |
 | `../kb/` | Fichas técnicas das pragas (Embrapa, CATI etc.) usadas na resposta |
