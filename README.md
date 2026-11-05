@@ -71,6 +71,7 @@ scripts/
 ├── 03_dividir_treino_teste.py  Split por observação, sem vazamento
 ├── 04_recortar_karaagro.py     Recorta o KaraAgro AI Maize por bounding box
 └── 05_treinar_cnn.py           Treina o classificador (MobileNetV3, transfer learning)
+whatsapp/                   Webhook da Evolution API (WhatsApp de verdade, usado na demo)
 api/
 ├── main.py                 Rotas do webhook (GET/POST /webhook)
 ├── config.py                Variáveis de ambiente (canal ativo, credenciais)
@@ -99,6 +100,10 @@ python scripts/04_recortar_karaagro.py --dir <pasta extraida do KaraAgro>
 python scripts/03_dividir_treino_teste.py
 python scripts/05_treinar_cnn.py
 ```
+
+## Como rodar o bot no WhatsApp (demonstração)
+
+A conexão real com o WhatsApp fica em [`whatsapp/`](whatsapp/), via **Evolution API** (não oficial: conecta como aparelho vinculado, pelo QR Code). Ela usa o mesmo pipeline de diagnóstico da raiz (`pipeline/`, `kb/`, `checkpoints/`). O passo a passo completo (Docker, QR Code, ngrok) está em [`whatsapp/README.md`](whatsapp/README.md).
 
 ## Como rodar a API (webhook)
 
