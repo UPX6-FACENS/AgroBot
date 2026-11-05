@@ -7,9 +7,22 @@ Chamado so nos casos com conteudo tecnico de verdade pra resumir (rota
 "direto" e "duvida" com praga identificada). Os casos triviais (porteiro
 reprovou a foto, rota "humano", milho_sadio) ficam com resposta fixa em
 pipeline/resposta.py — sem custo de API e sem risco de alucinacao onde
-nao precisa."""
+nao precisa.
+
+Tambem roda aqui o "porteiro de assunto" (foto_e_do_assunto): antes da
+CNN, o Claude so responde SIM/NAO pra "isso e' milho ou inseto?". A CNN
+so conhece 4 classes e SEMPRE escolhe uma delas — um print de tela ou uma
+selfie viravam "vaquinha com alta confianca". O porteiro nao escolhe
+praga nenhuma; quem decide a praga continua sendo a CNN."""
+
+import base64
+import io
+import logging
 
 import anthropic
+from PIL import Image
+
+logger = logging.getLogger(__name__)
 
 MODELO = "claude-haiku-4-5"
 
@@ -78,3 +91,50 @@ Escreva a mensagem de WhatsApp agora."""
         messages=[{"role": "user", "content": mensagem_usuario}],
     )
     return resposta.content[0].text.strip() + RODAPE_FIXO
+
+
+PROMPT_ASSUNTO = """Esta foto foi enviada a um chatbot de agricultura que identifica pragas.
+Responda SIM se aparecer na foto QUALQUER um destes, mesmo pequeno, de perto,
+desfocado ou segurado na mão: planta, folha, espiga, lavoura, raiz, lagarta,
+besouro, inseto, ou dano/furo em planta ou fruto.
+Responda NAO somente quando claramente não há planta nem inseto nenhum:
+prints de tela, pessoas/selfies, documentos, texto, objetos, animais
+domésticos, paisagem urbana.
+Na dúvida, responda SIM.
+Responda só uma palavra: SIM ou NAO."""
+
+MENSAGEM_FORA_DO_ASSUNTO = (
+    "🤔 Não encontrei planta de milho nem inseto nessa foto.\n\n"
+    "Manda uma foto bem de perto da folha, da espiga ou do bicho "
+    "que está atacando o milho 📷"
+)
+
+
+def foto_e_do_assunto(imagem: Image.Image) -> bool:
+    """True se a foto parece milho/inseto. Em caso de erro na API, deixa
+    passar (True) — melhor cair no fluxo normal (que ainda tem o roteador
+    de confianca) do que travar o bot inteiro sem internet."""
+    copia = imagem.convert("RGB")
+    copia.thumbnail((768, 768))  # foto menor = menos tokens e mais rapido
+    buffer = io.BytesIO()
+    copia.save(buffer, format="JPEG", quality=85)
+    dados = base64.standard_b64encode(buffer.getvalue()).decode("utf-8")
+
+    try:
+        resposta = anthropic.Anthropic().messages.create(
+            model=MODELO,
+            max_tokens=5,
+            messages=[{
+                "role": "user",
+                "content": [
+                    {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": dados}},
+                    {"type": "text", "text": PROMPT_ASSUNTO},
+                ],
+            }],
+        )
+    except anthropic.APIError:
+        logger.exception("porteiro de assunto falhou — deixando a foto passar")
+        return True
+
+    texto = next((b.text for b in resposta.content if b.type == "text"), "").strip().upper()
+    return not texto.startswith("NAO") and not texto.startswith("NÃO")

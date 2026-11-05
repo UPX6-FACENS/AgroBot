@@ -9,7 +9,7 @@ bem abaixo do limite de 1s que preocupa o webhook. Quando entrar o LLM
 
 from PIL import Image
 
-from pipeline import porteiro
+from pipeline import llm, porteiro
 from pipeline.modelo import classificar
 from pipeline.resposta import montar_resposta
 
@@ -18,6 +18,10 @@ def diagnosticar(imagem: Image.Image) -> str:
     ok, motivo = porteiro.verificar(imagem)
     if not ok:
         return porteiro.MENSAGEM_POR_MOTIVO[motivo]
+
+    # A CNN sempre escolhe uma das 4 classes — sem isto, print/selfie vira praga
+    if not llm.foto_e_do_assunto(imagem):
+        return llm.MENSAGEM_FORA_DO_ASSUNTO
 
     classe, confianca = classificar(imagem)
     return montar_resposta(classe, confianca)

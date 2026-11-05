@@ -24,7 +24,7 @@ RAIZ_REPO = Path(__file__).resolve().parent.parent
 if str(RAIZ_REPO) not in sys.path:
     sys.path.insert(0, str(RAIZ_REPO))
 
-from pipeline import porteiro
+from pipeline import llm, porteiro
 from pipeline.modelo import classificar
 from pipeline.resposta import montar_resposta
 from pipeline.roteador import decidir_rota
@@ -46,6 +46,11 @@ def analisar_foto(imagem_base64: str) -> dict:
     if not ok:
         logger.info("foto reprovada no porteiro: %s", motivo)
         return {"texto": porteiro.MENSAGEM_POR_MOTIVO[motivo], "diagnostico": None}
+
+    # A CNN sempre escolhe uma das 4 classes — sem isto, print/selfie vira "vaquinha"
+    if not llm.foto_e_do_assunto(imagem):
+        logger.info("foto fora do assunto (nao e' milho nem inseto)")
+        return {"texto": llm.MENSAGEM_FORA_DO_ASSUNTO, "diagnostico": None}
 
     classe, confianca = classificar(imagem)
     rota = decidir_rota(confianca)
