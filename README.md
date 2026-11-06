@@ -100,7 +100,9 @@ docs/
 ├── 03-panorama-pragas.md       Embasamento: ocorrência, perdas, níveis de controle
 ├── 04-guia-dataset.md          Passo a passo para montar o dataset de fotos
 ├── 05-guia-apresentacao.pdf    ★ Passo a passo do dia da apresentação
-└── gerar_guia_pdf.py           Gera o PDF acima (edite aqui e rode de novo)
+├── gerar_guia_pdf.py           Gera o PDF acima (edite aqui e rode de novo)
+├── img/                        ★ Imagens prontas para os slides (resultados, fluxo, prints reais)
+└── gerar_imagens_slides.py     Gera as imagens de img/ a partir do modelo e do conjunto de teste
 api/                        Alternativa com Twilio/Meta (não usada na demo; canal "teste" roda sem conta)
 checkpoints/                Modelo treinado — fora do Git, gerado pelo script 05
 dados/                      Fotos do dataset — fora do Git (licença de cada foto em dados/creditos.csv)
