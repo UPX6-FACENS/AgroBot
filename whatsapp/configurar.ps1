@@ -60,6 +60,22 @@ $body = @{
 $resp = Invoke-RestMethod -Uri "$base/webhook/set/$inst" -Method Post -Headers $headers -Body $body
 Write-Host "Webhook configurado: $($resp.url)" -ForegroundColor Green
 
+# 3b. Ignora mensagens de grupo. Se o numero do bot participa de grupos e fica dias
+#     desconectado, a Evolution tenta processar milhares de mensagens acumuladas ao
+#     reconectar: a fila atrasa (ou trava) a mensagem do produtor. O bot nao responde
+#     grupos mesmo, entao aqui elas sao descartadas logo na entrada.
+$body = @{
+    rejectCall      = $false
+    msgCall         = ""
+    groupsIgnore    = $true
+    alwaysOnline    = $false
+    readMessages    = $false
+    readStatus      = $false
+    syncFullHistory = $false
+} | ConvertTo-Json
+Invoke-RestMethod -Uri "$base/settings/set/$inst" -Method Post -Headers $headers -Body $body | Out-Null
+Write-Host "Mensagens de grupo: ignoradas." -ForegroundColor Green
+
 # 4. Mostra se o WhatsApp ja esta conectado
 $estado = (Invoke-RestMethod -Uri "$base/instance/connectionState/$inst" -Headers $headers).instance.state
 if ($estado -eq "open") {
@@ -71,4 +87,5 @@ if ($estado -eq "open") {
     Write-Host "   Chave: $($cfg['EVOLUTION_API_KEY'])"
     Write-Host "Clique na instancia '$inst' e escaneie o QR Code com o celular do BOT"
     Write-Host "(WhatsApp > Aparelhos conectados > Conectar um aparelho)."
+    Start-Process "$base/manager"
 }

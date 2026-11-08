@@ -6,6 +6,8 @@ Esta pasta é a **integração com o WhatsApp**: recebe as mensagens do WhatsApp
 
 > **Estado atual:** o pipeline de análise é o **real**, das pastas `pipeline/`, `kb/` e `checkpoints/` na raiz deste repositório: porteiro de qualidade da foto → CNN (MobileNetV3 em ONNX, 4 classes) → roteador de confiança → ficha da base de conhecimento → Claude Haiku só reescreve em linguagem simples. A ligação entre o webhook e o pipeline fica em `analise.py`.
 
+> **Jeito rápido (Windows):** com o `.env` pronto e o ngrok logado, dê dois cliques em **`ligar.bat`**: ele abre o Docker, sobe a Evolution, abre o bot e o ngrok em janelas próprias e configura webhook + "ignorar grupos". Para parar tudo, **`desligar.bat`**. O domínio do ngrok fica numa variável no topo do `ligar.bat`.
+
 > **Dia da apresentação:** siga o [`docs/05-guia-apresentacao.pdf`](../docs/05-guia-apresentacao.pdf) — checklist, passo a passo, roteiro da demo e problemas comuns.
 
 ---
@@ -35,7 +37,8 @@ Evolution API (Docker) ──► ngrok ──► Webhook FastAPI (este projeto)
 | `main.py` | FastAPI e o endpoint `/webhook` |
 | `handlers.py` | Filtros dos eventos, tratamento das mensagens e feedback |
 | `evolution.py` | Chamadas à Evolution API (enviar texto, baixar imagem) |
-| `configurar.ps1` | Cria a instância e aponta o webhook pro ngrok com um comando só |
+| `ligar.bat` / `desligar.bat` | Liga / desliga tudo (Docker, bot, ngrok, configuração) com dois cliques |
+| `configurar.ps1` | Cria a instância, aponta o webhook pro ngrok e liga "ignorar grupos" com um comando só |
 | `analise.py` | Ponte entre o webhook e o pipeline: decodifica a foto e chama o diagnóstico |
 | `../pipeline/` | Pipeline de diagnóstico (porteiro, CNN, roteador, base de conhecimento, LLM) |
 | `../kb/` | Fichas técnicas das pragas (Embrapa, CATI etc.) usadas na resposta |
@@ -185,6 +188,8 @@ Classes do modelo: `lagarta_cartucho`, `lagarta_espiga`, `vaquinha`, `milho_sadi
 
 ## Rotina do dia a dia
 
+**Mais simples:** `ligar.bat` para ligar, `desligar.bat` para desligar. Na mão:
+
 1. Abrir o Docker Desktop e rodar `docker compose up -d`.
 2. Terminal 1: `venv\Scripts\activate` e `uvicorn main:app --reload --port 8001`.
 3. Terminal 2: `ngrok http 8001`.
@@ -202,10 +207,13 @@ Para desligar: `Ctrl+C` nos dois terminais e `docker compose down`. Os dados da 
 | `401 Unauthorized` ao chamar a Evolution | A chave do comando não é a mesma do `EVOLUTION_API_KEY` do `.env`. Se mudou a chave depois de subir os containers, rode `docker compose up -d` de novo. |
 | No `curl` do PowerShell dá erro com `-X` e `-H` | No PowerShell, `curl` é um apelido de outro comando. Use `Invoke-RestMethod` (como neste README) ou `curl.exe`. |
 | Instância presa em *connecting* | O QR Code expirou. Gere outro no `/manager` e escaneie na hora. |
-| `405 Method Not Allowed` no terminal do `uvicorn` | A URL salva na Evolution não termina em `/webhook`. Refaça o passo 7. |
+| `405 Method Not Allowed` no terminal do `uvicorn` | A URL salva na Evolution não termina em `/webhook`. Refaça o passo 7. (Um `GET /webhook` com 405 na janela do ngrok é normal: é só alguém abrindo o endereço no navegador. A Evolution usa `POST`.) |
 | Chegam mensagens, mas o bot não responde nada | O número da conversa não está em `ALLOWED_NUMBERS`, ou o `.env` foi editado sem reiniciar o `uvicorn`. |
 | O bot ignora mensagens novas | O relógio do computador está adiantado mais de 2 minutos (as mensagens parecem "antigas"). Sincronize a hora do Windows. |
-| Logo ao reconectar, o terminal enche de eventos | É o acúmulo de mensagens de quando a instância ficou desligada. O webhook descarta o que é antigo. Se demorar, rode `docker compose restart evolution-api`. |
+| Logo ao reconectar, o terminal enche de eventos | É o acúmulo de mensagens de quando a instância ficou desligada (principalmente de **grupos**, se o número do bot participa de algum). A mensagem do produtor fica no fim da fila. O `configurar.ps1` liga "ignorar grupos" na instância para evitar isso. Se ainda demorar, rode `docker compose restart evolution-api`. |
+| Foto não chega e a janela do ngrok não mostra nenhum `POST /webhook` | O ngrok não está rodando: a Evolution recebe `404 ERR_NGROK_3200` e **descarta** a mensagem (não tenta de novo). Suba o ngrok e mande a foto outra vez. |
+| Foto fica com **um tique só**, ou a Evolution diz *open* mas não registra nada | A Evolution travou. Rode `docker compose restart evolution-api`. Se continuar, a sessão estragou: desconecte o aparelho no celular do bot, gere um QR novo no `/manager` e escaneie. |
+| `instance does not exist` / bot recebe mas não responde | A instância conectada tem outro nome (ex.: criada pelo `/manager`). Ajuste `EVOLUTION_INSTANCE` no `.env` para o nome dela e rode o `ligar.bat` (ou `configurar.ps1`) de novo. |
 | `ImportError` ao subir o `uvicorn` | O ambiente virtual não está ativo, ou faltou `pip install -r requirements.txt`. |
 
 Para ver mais detalhes no terminal, coloque `LOG_LEVEL=DEBUG` no `.env` e reinicie o `uvicorn`.
