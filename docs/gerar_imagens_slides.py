@@ -235,7 +235,7 @@ salvar(fig, "05-por-que-80.png")
 
 # --- 06 fluxo do sistema ----------------------------------------------------
 fig = plt.figure(figsize=(W, H))
-titulo(fig, "Como o Doutor da Roça responde", "Quem decide a praga é a rede neural; o Claude só escreve em linguagem simples")
+titulo(fig, "Como o AgroBot responde", "Quem decide a praga é a rede neural; o Claude só escreve em linguagem simples")
 ax = fig.add_axes([0, 0, 1, 0.82])
 ax.set_xlim(0, 16)
 ax.set_ylim(0, 8)
